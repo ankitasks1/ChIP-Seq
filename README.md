@@ -293,6 +293,7 @@ annotatePeaks.pl peaks.bed hg38 > annotated_peaks.bed
 #USE R based softwares
 
 #Here first you need to install R and RStudio
+
 #R:https://cran.r-project.org/bin/windows/base/R-4.2.1-win.exe, https://cran.r-project.org/mirrors.html, https://cran.r-project.org/bin/macosx/base/R-4.2.1.pkg
 
 #RStudio: https://www.rstudio.com/products/rstudio/download/
@@ -306,114 +307,175 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install("ChIPseeker")
 BiocManager::install("ChIPseeker")
 
-#Run Chipseeker	 	 	 	
+#Run Chipseeker	 
+
 #Import library
+
 library(ChIPseeker)
+
 library(TxDb.Mmusculus.UCSC.mm9.knownGene)
+
 library(clusterProfiler)
 
 txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 
 #Import Peak files 
+
 SRR2927818_bed <- "/home/ankits/data_av/test/SRR2927818/peak_calling_bed/peak_annotation/chipseeker/peak_SRR2927817_818_peaks.bed"
+
 SRR2927819_bed <- "/home/ankits/data_av/test/SRR2927818/peak_calling_bed/peak_annotation/chipseeker/peak_SRR2927817_819_peaks.bed.gz"
 
 print(SRR2927818_bed)
+
 SRR2927818_peak <- readPeakFile(SRR2927818_bed)
+
 SRR2927818_peak
 
 SRR2927819_peak <- readPeakFile(SRR2927819_bed)
+
 SRR2927819_peak
 
 #ChIP peaks coverage plot
+
 covplot(SRR2927819_peak, weightCol="V5")
+
 covplot(SRR2927819_peak, weightCol="V5", chrs=c("chr17", "chr18"), xlim=c(4.5e7, 5e7))
 
 #Profile of ChIP peaks binding to TSS regions
+
 promoter <- getPromoters(TxDb=txdb, upstream=3000, downstream=3000)
+
 SRR2927819_tagMatrix <- getTagMatrix(SRR2927819_peak, windows=promoter)
 
 #Heatmap of ChIP binding to TSS regions
+
 tagHeatmap(SRR2927819_tagMatrix, xlim=c(-3000, 3000), color="red")
+
 peakHeatmap(SRR2927819_bed, TxDb=txdb, upstream=3000, downstream=3000, color="red")
 
 #Average Profile of ChIP peaks binding to TSS region
+
 plotAvgProf(SRR2927819_tagMatrix, xlim=c(-3000, 3000),
             xlab="Genomic Region (5'->3')", ylab = "Read Count Frequency")
+
 plotAvgProf2(SRR2927819_bed, TxDb=txdb, upstream=3000, downstream=3000,
              xlab="Genomic Region (5'->3')", ylab = "Read Count Frequency")
+
 plotAvgProf(SRR2927819_tagMatrix, xlim=c(-3000, 3000), conf = 0.95, resample = 1000)
 
 
 #Peak Annotation
+
 SRR2927819_peakAnno <- annotatePeak(SRR2927819_bed,, tssRegion=c(-3000, 3000),
                          TxDb=txdb, annoDb="org.Mm.eg.db")
 
 #Visualize Genomic Annotation
+
 plotAnnoPie(SRR2927819_peakAnno)
+
 plotAnnoBar(SRR2927819_peakAnno)
+
 vennpie(SRR2927819_peakAnno)
+
 upsetplot(SRR2927819_peakAnno)
+
 upsetplot(SRR2927819_peakAnno, vennpie=TRUE)
 
 #Visualize distribution of TF-binding loci relative to TSS
+
 plotDistToTSS(SRR2927819_peakAnno,
               title="Distribution of transcription factor-binding loci\nrelative to TSS")
 
 
 #Differential binding analysis
+
 #Diffbind (Stark et al., 2011)
+
 BiocManager::install("DiffBind")
+
 library(DiffBind)
+
 library(tidyverse)
+
 setwd("/Users/ankitverma/Documents/Archivio2/tutorial/diffbind")
+
+
 samples <- read.csv('short_sheet.csv')
+
 names(samples)
+
 #Create diffbind object
+
 dbObj <- dba(sampleSheet=samples)
+
 dbObj
+
 #compute count information for each of the peaks/regions 
+
 dbObj <- dba.count(dbObj, bUseSummarizeOverlaps=TRUE)
+
 #Normalize
+
 dbObj <- dba.normalize(dbObj)
+
 #Establish contrast
+
 dbObj <- dba.contrast(dbObj, categories=DBA_FACTOR, minMembers = 2)
+
 #Performing the differential enrichment analysis
+
 dbObj <- dba.analyze(dbObj, method=DBA_ALL_METHODS)
 
 #Export DE sites
+
 dbObj.DB <- dba.report(dbObj, method=DBA_DESEQ2, contrast = 1, th=1)
 
 #Count Enriched and Depleted sites
+
 sum(dbObj.DB$Fold>0)
+
 sum(dbObj.DB$Fold<0)
 
 # Create bed files for each keeping only significant peaks (p < 0.05)
+
 out <- as.data.frame(dbObj.DB)
+
 WT_enrich <- out %>% filter(FDR < 0.05 & Fold > 0) %>%  select(seqnames, start, end)
+
 write.table(WT_enrich, file="WT_enriched.bed", sep="\t", quote=F, row.names=F, col.names=F)
+
 KO_enrich <- out %>%  filter(FDR < 0.05 & Fold < 0) %>% select(seqnames, start, end)
+
 write.table(KO_enrich, file="KO_enriched.bed", sep="\t", quote=F, row.names=F, col.names=F)
 
 #Plot PCA
+
 dba.plotPCA(dbObj,  attributes=DBA_FACTOR, label=DBA_ID, vColors = c("green","red"))
 
 #Correlation heatmap
+
 plot(dbObj)
 
 #Assess
+
 dba.show(dbObj, bContrasts=T)
+
 dba.plotPCA(dbObj, contrast=1, method=DBA_DESEQ2, attributes=DBA_FACTOR, label=DBA_ID, vColors = c("red","green"))
 
 #Plot venn
+
 dba.plotVenn(dbObj,contrast=1,method=DBA_ALL_METHODS)
 
 #Plot MA
+
 dba.plotMA(dbObj, method=DBA_DESEQ2)
 
 #Plot Volcano
+
 dba.plotVolcano(dbObj)
 
 #Heatmap
+
 hmap <- colorRampPalette(c("red", "black", "green"))(n = 13)
+
 readscores <- dba.plotHeatmap(dbObj, contrast=1, correlations=FALSE, scale="row", colScheme = hmap)
