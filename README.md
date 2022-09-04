@@ -1,190 +1,304 @@
 # ChIP-Seq
-Analysis pipeline for ChIP-Seq
+
+#Analysis pipeline for ChIP-Seq
+
 #Have your own data? Yes -> Proceed from Step ... , No -> Follow from step1
+
+
 #Step 1: Exolore Practice data, copy SRR code
+
 https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE31477
 
 eg.
+
 GSM817343
+
 USC_ChipSeq_HepG2_Input_UCDavis
+
 GSM782122
+
 USC_ChipSeq_HepG2_TCF7L2_UCDavis
 
+
+
 #Step 2: Get the data from public repository (SRA)
-#Innstall SRA tool kit
+
+#Install SRA tool kit
+
 #https://github.com/ncbi/sra-tools/wiki/01.-Downloading-SRA-Toolkit
+
 #Select Ubuntu Linux 64 bit architecture/ mac OSX
+
 #Install sra-toolkit
 
 /home/ankits/sratoolkit/bin/fastq-dump --split-files --gzip SRR9876543
 
-#Quality Check your fastq files
-#Install FastQC
+
+#Step 3:Quality Check your fastq files
+
+#Get FastQC
+
 #https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
+
 #Click Download Now
+
 #Click anyone as per your Operating system: FastQC v0.11.9 (Win/Linux zip file), FastQC v0.11.9 (Mac DMG image)
+
 #Make sure the suitable java runtime environment (JRE) is installed : https://www.java.com/en/download/manual.jsp
+
 #java -version
+
 #Install fastqc
+
 #Make the fastqc function executable 
+
 chmod 755 fastqc
+
 ./fastqc SRR67548.fastq.gz
 
 #Expected output==> SRR67548.html
 
-#Trimming low quality and adapter sequences
+
+#Step 4:Trimming low quality and adapter sequences
+
 #Trimmomatic
+
 #Download 
+
 wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.39.zip
+
 unzip Trimmomatic-0.39.zip
+
 #Single-End
+
 java -jar /pathTo/trimmomatic-0.35.jar SE -phred33 input.fq.gz output.fq.gz ILLUMINACLIP:TruSeq3-SE:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
 
 #Paired-End
+
 java -jar /pathTo/trimmomatic-0.39.jar PE input_R1.fq.gz input_R2.fq.gz R1_paired.fastq.gz  R1_unpaired.fastq.gz  R2_paired.fastq.gz  R2_unpaired.fastq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
 
-#Mapping data: Alignment
+
+#Step 5: Mapping data: Alignment
+
 #http://bowtie-bio.sourceforge.net/index.shtml
+
 #Download the latest version: .zip
+
 unzip bowtie2-2.4.5-macos-arm64.zip
+
 cd bowtie2-2.4.5-macos-arm64    
+
 #Index the reference genome: 
+
 bowtie2-build GRCh38.fa GRCh38 (eg. /home/ankits/genome/hg38.fa)
 
 #Alignment command:
+
 #SE
+
 bowtie2 -q -x /home/ankits/folder/GRCh38 -U SRR2927818_trimmed.fastq -S SRR2927818.sam
 
 #PE
+
 bowtie2 -q -x home/ankits/folder/GRCh38 -1 SRR639251_paired.fastq -2 SRR639252_paired.fastq -U SRR639251_unpaired.fastq, SRR639252_unpaired.fastq -S SRR639252.sam
 
+#Step 6: Filter multimapping , duplicated and overlapping blacklisted region reads
+
 #Samtools
-http://www.htslib.org/download/  
+
+http://www.htslib.org/download/ 
+
 cd samtools-1.x    
+
 Install htslib first
+
 ./configure --prefix=/where/to/install
+
 make
+
 make install
+
 Now install samtools similarly like htslib
 
 
 #Convert SAM to BAM
+
 samtools view -S -b SRR639252.sam > SRR639252.bam
 
 #Extract Uniquely mapped reads
+
 samtools view -b -q 20 SRR639252.bam > SRR639252_uniq.bam
 
 #Sort BAM
+
 samtools sort -o SRR639252_uniq_sorted.bam SRR639252_uniq.bam
+
 samtool index SRR639252_uniq_sorted.bam
 
 #Remove PCR duplicates
+
 #https://github.com/broadinstitute/picard/releases/download/2.27.4/picard.jar
 
 java -jar ~/tools_av/picard.jar MarkDuplicates I=SRR639252_uniq_sorted.bam  O=SRR639252_uniq_sorted_dedups.bam M=SRR639252_picard_info.txt REMOVE_DUPLICATES=true AS=true CREATE_INDEX=true VALIDATION_STRINGENCY=STRICT
 
 #Removing “Blacklisted” regions
+
 #Install Bedtools (required)
+
 wget https://github.com/arq5x/bedtools2/releases/download/v2.29.1/bedtools-2.29.1.tar.gz
+
 tar -zxvf bedtools-2.29.1.tar.gz
+
 cd bedtools2
+
 make
 
 bedtools intersect -abam SRR639252_uniq_sorted_dedups.bam -b hg38_blacklist.v2.bed -v | samtools sort --threads 4 -o SRR639252_uniq_sorted_dedups_freeblacklists.bam
 
-#Peak calling
+#Step 7: Peak calling
+
 #Install MACS2 / SICER2
+
 #How to get Conda
+
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-Sh Miniconda3-latest-Linux-x86_64.sh
+
+./Miniconda3-latest-Linux-x86_64.sh
+
 conda install -c bioconda macs2
+
 conda install -c bioconda sicer2
 
 #Using Source
+
 wget https://github.com/macs3-project/MACS/archive/refs/tags/v2.2.7.1.tar.gz
+
 tar zxvf MACS-2.2.6.tar.gz
+
 cd MACS-2.2.6/
+
 python setup.py install
 
 https://files.pythonhosted.org/packages/6c/a8/25604c45b7eee1a56a0c459cd8b5edae9771a2669b60eb691aa16b055ee8/SICER2-1.0.3.tar.gz
+
 tar zxvf SICER2-1.0.3.tar.gz
+
 cd SICER2-1.0.3
+
 python setup.py install
 
 #Using pip
+
 Require numpy
+
 pip install macs2
+
 pip install SICER2
 
 #You need set path to run
- ./miniconda3/lib/python3.9/site-packages (2.2.7.1)
+
 Note: numpy in /Users/ankitverma/miniconda3/lib/python3.9/site-packages
+
 Set path 
+
 export PATH=./miniconda3/:$PATH
 
 #Peak calling
+
 #MACS2
+
 macs2 callpeak -t transcription_factor.bam -c Input.bam -g 2.7e9 -n transcription_factor --keep-dup all (-f BAMPE) 
 
 #MACS2 --broad
+
 macs2 callpeak -t histone_marks.bam -c Input.bam -g 2.7e9 -n histone_marks --keep-dup all --broad (-f BAMPE) 
 
 #epic2
+
 epic2 -t histone_marks.bam -c Input.bam  --guess-bampe  --genome hg38 --output histone_marks --keep-duplicates
 
 #SICER2
+
 sicer --t histone_marks.bam -c Input.bam -s hg38 -w 200 -egf 0.85 -g 600 -o histone_marks
 
+#Step 8: Explore peaks
+
 #Distribution of Peaks around features
+
 #Deeptools
+
 computeMatrix reference-point -S H3K4me2.bw -R refTSS_v3.3_human_coordinate.hg38.bed -o test1 --a 3000 -b 3000 -bs 25 --missingDataAsZero
 
 plotHeatmap -m test1 --colorList "white,blue" -out test1_computeMatrix1.png --sortUsing max 
 
 #Motif analysis
+
 #Web version https://meme-suite.org/meme/tools/meme
+
 #Command-line version
 
-
 #Install required packages, otherwise you will get error
+
 Install XML perl module
+
 sudo apt-get install libxml-simple-perl
+
 Install HTML template perl module
+
 sudo apt-get install libhtml-template-perl
+
 Install JSON perl module
+
 sudo apt-get install libjson-perl
+
 Configure
+
 ./configure --prefix=$HOME/meme --with-url=http://meme-suite.org --enable-build-libxml2 --enable-build-libxslt
+
 Cleanup old installations of meme
+
 make clean
+
 Install meme
+
 make
+
 make test
+
 make install
+
 #Get fasta (Obtain +/- 5bp from peak summit (generated by caller), you can use awk command to do that)
+
 bedtools getfasta -fi mm10.fa -bed peaks_summit_5bp.bed -fo out.fa
 
+eg. pf output fasta
 Format of output: out.fa
 >chr4:141410873-141410884
 TGATTGATGCCTGCCTGTTA
 
 #Run meme
+
 /home//meme/bin/meme-chip -meme-nmotifs 2 out.fa
 
-
 #Predict chromatin state
+
 wget  http://compbio.mit.edu/ChromHMM/ChromHMM.zip
 
-
 #Annotate Peaks
+
 #HOMER (http://homer.ucsd.edu/homer/introduction/install.html)
+
 annotatePeaks.pl peaks.bed hg38 > annotated_peaks.bed
 
 #USE R based softwares
+
 #Here first you need to install R and RStudio
 #R:https://cran.r-project.org/bin/windows/base/R-4.2.1-win.exe, https://cran.r-project.org/mirrors.html, https://cran.r-project.org/bin/macosx/base/R-4.2.1.pkg
+
 #RStudio: https://www.rstudio.com/products/rstudio/download/
+
 #Learn R scripting
+
 #Install
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
