@@ -1,10 +1,10 @@
 
 # Analysis pipeline for ChIP-Seq
 
-#Have your own data? Yes -> Proceed from Step ... , No -> Follow from step1
+#Have your own data? Yes -> Proceed from Step 3 , No -> Follow from Step 1
 
 
-# Step 1: Exolore Practice data, copy SRR code
+# Step 1: Explore Practice data, copy SRR code
 
 https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE31477
 
