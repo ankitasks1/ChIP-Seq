@@ -1,6 +1,5 @@
-# ChIP-Seq
 
-#Analysis pipeline for ChIP-Seq
+# Analysis pipeline for ChIP-Seq
 
 #Have your own data? Yes -> Proceed from Step ... , No -> Follow from step1
 
