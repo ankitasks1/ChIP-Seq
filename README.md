@@ -5,7 +5,7 @@
 #Have your own data? Yes -> Proceed from Step ... , No -> Follow from step1
 
 
-#Step 1: Exolore Practice data, copy SRR code
+# Step 1: Exolore Practice data, copy SRR code
 
 https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE31477
 
@@ -21,7 +21,7 @@ USC_ChipSeq_HepG2_TCF7L2_UCDavis
 
 
 
-#Step 2: Get the data from public repository (SRA)
+# Step 2: Get the data from public repository (SRA)
 
 #Install SRA tool kit
 
@@ -34,7 +34,7 @@ USC_ChipSeq_HepG2_TCF7L2_UCDavis
 /home/ankits/sratoolkit/bin/fastq-dump --split-files --gzip SRR9876543
 
 
-#Step 3:Quality Check your fastq files
+# Step 3:Quality Check your fastq files
 
 #Get FastQC
 
@@ -59,7 +59,7 @@ chmod 755 fastqc
 #Expected output==> SRR67548.html
 
 
-#Step 4:Trimming low quality and adapter sequences
+# Step 4:Trimming low quality and adapter sequences
 
 #Trimmomatic
 
@@ -78,7 +78,7 @@ java -jar /pathTo/trimmomatic-0.35.jar SE -phred33 input.fq.gz output.fq.gz ILLU
 java -jar /pathTo/trimmomatic-0.39.jar PE input_R1.fq.gz input_R2.fq.gz R1_paired.fastq.gz  R1_unpaired.fastq.gz  R2_paired.fastq.gz  R2_unpaired.fastq.gz ILLUMINACLIP:TruSeq3-PE.fa:2:30:10:2:True LEADING:3 TRAILING:3 MINLEN:36
 
 
-#Step 5: Mapping data: Alignment
+# Step 5: Mapping data: Alignment
 
 #http://bowtie-bio.sourceforge.net/index.shtml
 
@@ -102,7 +102,7 @@ bowtie2 -q -x /home/ankits/folder/GRCh38 -U SRR2927818_trimmed.fastq -S SRR29278
 
 bowtie2 -q -x home/ankits/folder/GRCh38 -1 SRR639251_paired.fastq -2 SRR639252_paired.fastq -U SRR639251_unpaired.fastq, SRR639252_unpaired.fastq -S SRR639252.sam
 
-#Step 6: Filter multimapping , duplicated and overlapping blacklisted region reads
+# Step 6: Filter multimapping , duplicated and overlapping blacklisted region reads
 
 #Samtools
 
@@ -155,7 +155,7 @@ make
 
 bedtools intersect -abam SRR639252_uniq_sorted_dedups.bam -b hg38_blacklist.v2.bed -v | samtools sort --threads 4 -o SRR639252_uniq_sorted_dedups_freeblacklists.bam
 
-#Step 7: Peak calling
+# Step 7: Peak calling
 
 #Install MACS2 / SICER2
 
@@ -221,7 +221,7 @@ epic2 -t histone_marks.bam -c Input.bam  --guess-bampe  --genome hg38 --output h
 
 sicer --t histone_marks.bam -c Input.bam -s hg38 -w 200 -egf 0.85 -g 600 -o histone_marks
 
-#Step 8: Explore peaks
+# Step 8: Explore peaks
 
 #Distribution of Peaks around features
 
@@ -284,7 +284,7 @@ TGATTGATGCCTGCCTGTTA
 
 wget  http://compbio.mit.edu/ChromHMM/ChromHMM.zip
 
-#Annotate Peaks
+# Step 9: Annotate Peaks
 
 #HOMER (http://homer.ucsd.edu/homer/introduction/install.html)
 
@@ -387,7 +387,7 @@ plotDistToTSS(SRR2927819_peakAnno,
               title="Distribution of transcription factor-binding loci\nrelative to TSS")
 
 
-#Differential binding analysis
+# Step 10: Differential binding analysis
 
 #Diffbind (Stark et al., 2011)
 
@@ -436,7 +436,7 @@ sum(dbObj.DB$Fold>0)
 
 sum(dbObj.DB$Fold<0)
 
-# Create bed files for each keeping only significant peaks (p < 0.05)
+#Create bed files for each keeping only significant peaks (p < 0.05)
 
 out <- as.data.frame(dbObj.DB)
 
