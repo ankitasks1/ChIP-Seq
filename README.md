@@ -72,7 +72,7 @@ USC_ChipSeq_HepG2_TCF7L2_UCDavis
 
 #Single-End
 
-<code>java -jar /pathTo/trimmomatic-0.35.jar SE -phred33 input.fq.gz output.fq.gz ILLUMINACLIP:TruSeq3-SE:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36</code>
+<code>java -jar /pathTo/trimmomatic-0.35.jar SE -phred33 input.fq.gz output.fq.gz ILLUMINACLIP:TruSeq3-SE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36</code>
 
 #Paired-End
 
