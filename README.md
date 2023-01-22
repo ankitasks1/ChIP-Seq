@@ -134,7 +134,7 @@ Now install samtools similarly like htslib
 
 <code>samtools sort -o SRR639252_uniq_sorted.bam SRR639252_uniq.bam</code>
 
-<code>samtool index SRR639252_uniq_sorted.bam</code>
+<code>samtools index SRR639252_uniq_sorted.bam</code>
 
 #Remove PCR duplicates
 
