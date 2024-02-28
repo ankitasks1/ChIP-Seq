@@ -292,11 +292,12 @@ TGATTGATGCCTGCCTGTTA
 <code>java  -mx4000M -jar ~/tools_av/ChromHMM/ChromHMM.jar LearnModel -p 2 outputBinarizeddata outLearnModel 10 hg38</code>
 
 # Step 9: Annotate Peaks
+#USE Linux based softwares
 
-#HOMER (http://homer.ucsd.edu/homer/introduction/install.html)
+#####HOMER (http://homer.ucsd.edu/homer/introduction/install.html)
 
 <code>annotatePeaks.pl peaks.bed hg38 > annotated_peaks.bed</code>
-
+#or 
 #USE R based softwares
 
 #Here first you need to install R and RStudio
@@ -307,14 +308,14 @@ TGATTGATGCCTGCCTGTTA
 
 #Learn R scripting
 
-#Install
+#### Install Chipseeker
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("ChIPseeker")
 BiocManager::install("ChIPseeker")
 
-#Run Chipseeker	 
+#### Run Chipseeker	 
 
 #Import library
 
@@ -330,7 +331,7 @@ txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 
 SRR2927818_bed <- "/home/ankits/data_av/test/SRR2927818/peak_calling_bed/peak_annotation/chipseeker/peak_SRR2927817_818_peaks.bed"
 
-SRR2927819_bed <- "/home/ankits/data_av/test/SRR2927818/peak_calling_bed/peak_annotation/chipseeker/peak_SRR2927817_819_peaks.bed.gz"
+SRR2927819_bed <- "/home/ankits/data_av/test/SRR2927818/peak_calling_bed/peak_annotation/chipseeker/peak_SRR2927817_819_peaks.bed"
 
 print(SRR2927818_bed)
 
