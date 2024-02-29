@@ -316,7 +316,7 @@ BiocManager::install("ChIPseeker")
 BiocManager::install("ChIPseeker")
 
 #### Run Chipseeker	 
-
+<code>
 #Import library
 
 library(ChIPseeker)
@@ -394,6 +394,7 @@ upsetplot(SRR2927819_peakAnno, vennpie=TRUE)
 plotDistToTSS(SRR2927819_peakAnno,
               title="Distribution of transcription factor-binding loci\nrelative to TSS")
 
+</code>
 
 # Step 10: Differential binding analysis
 
