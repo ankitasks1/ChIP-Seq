@@ -403,6 +403,8 @@ plotDistToTSS(SRR2927819_peakAnno,
 
 # Step 10: Differential binding analysis
 
+<pre>
+```r
 #Diffbind (Stark et al., 2011)
 
 BiocManager::install("DiffBind")
@@ -493,3 +495,6 @@ dba.plotVolcano(dbObj)
 hmap <- colorRampPalette(c("red", "black", "green"))(n = 13)
 
 readscores <- dba.plotHeatmap(dbObj, contrast=1, correlations=FALSE, scale="row", colScheme = hmap)
+
+```
+</pre>
