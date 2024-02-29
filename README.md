@@ -309,11 +309,15 @@ TGATTGATGCCTGCCTGTTA
 #Learn R scripting
 
 #### Install Chipseeker
+<pre>
+```r
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("ChIPseeker")
 BiocManager::install("ChIPseeker")
+```
+</pre>
 
 #### Run Chipseeker	 
 <pre>
