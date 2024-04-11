@@ -496,5 +496,220 @@ hmap <- colorRampPalette(c("red", "black", "green"))(n = 13)
 
 readscores <- dba.plotHeatmap(dbObj, contrast=1, correlations=FALSE, scale="row", colScheme = hmap)
 
-```
 </pre>
+
+#### Diffbind pipleine full
+
+<pre> 
+ss <- read.csv("/mnt/beegfs6/home3/reid/av638/atacseq/surani_lab/wg/samplesheet.csv")
+obj <- dba(sampleSheet=ss,  scoreCol=5, minOverlap=1)
+# head(dba.peakset(obj, bRetrieve=TRUE, DataType=DBA_DATA_FRAME))
+# dim(dba.peakset(obj, bRetrieve=TRUE, DataType=DBA_DATA_FRAME))
+# colSums(dba.peakset(obj, minOverlap=2,bRetrieve=TRUE, DataType=DBA_DATA_FRAME)[,-c(1:3)])
+
+# get counts (mapQCth=15 was kept to match with results from DESeq2/featurecounts, summits=FALSE for counting over full peak, )
+obj <- dba.count(obj, minOverlap=1, score=DBA_SCORE_READS, summits=FALSE, mapQCth=15)# mapQC kept 15 for default of diffbind
+obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_PEAKREADS) # peakreads # DBA_LIBSIZE_PEAKREADS for matching results the way DESEQ2 calculate size factor using library size withing the interval
+obj <- dba.contrast(obj, minMembers = 2,categories=DBA_CONDITION) # create contrast using conditions present, atleast 2 replicates should be there for each condition
+obj <- dba.analyze(obj) # run in default state
+
+obj$norm$DESeq2$norm.calc
+obj$norm$DESeq2$norm.method
+obj$norm$DESeq2$lib.calc
+obj$norm$DESeq2$lib.method
+obj$norm$DESeq2$lib.sizes
+obj$norm$DESeq2$norm.facs
+
+overlapplot <- dba.overlap(obj, mode=DBA_OLAP_RATE)
+
+dba.plotPCA(obj, attributes=DBA_CONDITION, label=DBA_REPLICATE, method= DBA_DESEQ2, score=DBA_SCORE_READS)
+
+dba.plotPCA(obj, attributes=DBA_CONDITION, label=DBA_REPLICATE, method= DBA_DESEQ2, score=DBA_SCORE_NORMALIZED)
+
+# normalized pca
+db_pca_resn <- prcomp(t(counts(obj$DESeq2$DEdata, normalized =T)), center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_ind(db_pca_resn, geom = c("point", "text"), repel = TRUE, labelsize = 4)
+
+
+df_diffbind_test_all <- data.frame(dba.report(obj, method=DBA_DESEQ2, contrast = 1, th=1))
+df_diffbind_test_all["id"] <- paste0(df_diffbind_test_all$seqnames,
+                                    "%",
+                                    df_diffbind_test_all$start,
+                                    "%",
+                                    df_diffbind_test_all$end)
+df_diffbind_test_all["antilogConc"] <- 2^df_diffbind_test_all$Conc
+# df_diffbind_test_de <- df_diffbind_test_all %>% dplyr::filter(FDR < 0.05 & (Fold > log(2,2) | Fold < -log(2,2)))
+df_diffbind_test_all0.05 <- df_diffbind_test_all %>% dplyr::filter(FDR < 0.05)
+df_diffbind_test_de <- df_diffbind_test_all0.05 %>% dplyr::filter((Fold > 2 | Fold < -2))
+
+df_diffbind_test_de["id"] <- paste0(df_diffbind_test_de$seqnames,
+                                    "%",
+                                    df_diffbind_test_de$start,
+                                    "%",
+                                    df_diffbind_test_de$end)
+
+
+dim(df_diffbind_test_de)
+
+test_contrasts <- dba.show(obj, bContrasts=TRUE)
+
+
+</pre>
+#### DESEQ2 using DIFFBIND derived counts
+<pre>
+
+# get counts from diffbind
+d_counts <- dba.peakset(obj, bRetrieve=TRUE, DataType=DBA_DATA_FRAME)
+rownames(d_counts) <- paste0(d_counts$CHR, "%", d_counts$START, "%", d_counts$END)
+d_counts <- d_counts[,-c(1:3)]
+coldata <- data.frame(fread("coldata.txt", header = T))
+rownames(coldata) <- coldata$SampleID
+coldata$condition <- factor(coldata$Condition)
+coldata$replicate <- factor(coldata$Replicate)
+coldata <- coldata[,c(1,2,5,6)]
+all(rownames(coldata) == colnames(counts)) #should print TRUE
+# no filtering is required for low counts as the raw counts are already filtered by diffbind
+
+
+d_dds <- DESeq2::DESeqDataSetFromMatrix(countData = as.matrix(d_counts), colData = coldata, design = ~ condition)
+
+# no filtering is required for low counts as the raw counts are already filtered by diffbind
+sizeFactors(d_dds) <- obj$DESeq2$facs
+#-----
+#test for local fittype
+# d_dds <- estimateSizeFactors(d_dds) # alternative to DESeq2::DESeq(d_dds) for diffbind
+d_dds <- estimateDispersions(d_dds, fitType = "local")
+# DESeq2::nbinomWaldTest, with defaults
+d_dds <- nbinomWaldTest(d_dds)
+
+#-----
+# vst pca
+# d_vst <- DESeq2::vst(d_dds, fitType = "local")
+# d_pcaData <- DESeq2::plotPCA(d_vst, intgroup=c("condition", "replicate"), returnData=TRUE)
+# d_percentVar <- round(100 * attr(d_pcaData, "percentVar"))
+# ggplot(d_pcaData, aes(PC1, PC2, color=condition, shape=replicate)) +
+#   geom_point(size=3) +
+#   xlab(paste0("PC1: ",d_percentVar[1],"% variance")) +
+#   ylab(paste0("PC2: ",d_percentVar[2],"% variance")) +
+#   coord_fixed() + theme_bw()
+# 
+# d_dds <- DESeq2::DESeq(d_dds)
+
+# raw pca
+d_pca_res <- prcomp(t(counts(d_dds)), center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_ind(d_pca_res, geom = c("point", "text"), repel = TRUE, labelsize =4)
+
+
+# normalized pca
+d_pca_resn <- prcomp(t(counts(d_dds, normalized =T)), center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_ind(d_pca_resn, geom = c("point", "text"), repel = TRUE, labelsize = 4)
+
+
+res_d <- DESeq2::results(d_dds, contrast=c("condition", "DE", "hESC"))
+res_d <- lfcShrink(d_dds, contrast=c("condition", "DE", "hESC"), res=res, type="ashr") # shrinkage as diffbind does for logfoldchange
+res_d$threshold <- as.logical(res_d$padj < 0.05)
+res_d_fdr <- data.frame(res_d[which(res_d$threshold == TRUE),])
+# logfc filter
+res_d_de <- res_d_fdr %>% dplyr::filter((log2FoldChange > 2) | (log2FoldChange < -2))
+dim(res_d_de)
+dim(df_diffbind_test_de)
+length(intersect(rownames(res_d_de), df_diffbind_test_de$id))
+res_d["id"] <- rownames(res_d)
+res_d["logbaseMean"] <- log2(res_d$baseMean+1)
+</pre>
+
+####### Footnotes----------
+     > obj <- dba.normalize(obj, method=DBA_DESEQ2)
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+> obj <- dba.normalize(obj, method=DBA_DESEQ2,library = DBA_LIBSIZE_DEFAULT)
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_DEFAULT)
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+> obj <- dba.normalize(obj, library = DBA_LIBSIZE_FULL)
+> 
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_DEFAULT)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE)# RLE for DESEq2
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923 
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_PEAKREADS)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923 
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_DEFAULT,library = DBA_LIBSIZE_PEAKREADS)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489 
+> obj <- dba.normalize(obj, method=DBA_DESEQ2,library = DBA_LIBSIZE_PEAKREADS)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489 
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_FULL)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
+> obj <- dba.normalize(obj,normalize = DBA_NORM_NATIVE)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
+> obj <- dba.normalize(obj)# default all
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+> obj <- dba.normalize(obj, library = DBA_LIBSIZE_PEAKREADS)
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_FULL)
+> 
+> obj$norm$DESeq2$norm.facs
+ [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_PEAKREADS)
+> 
+> obj$norm$DESeq2$norm.facs
+        DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
+    1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
+hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489
+
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_DEFAULT)
+> obj$norm$DESeq2$norm.facs
+[1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
+[18] 1.1804729 0.7696433 0.7346065
+
+
+
