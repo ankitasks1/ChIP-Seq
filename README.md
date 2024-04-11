@@ -498,7 +498,7 @@ readscores <- dba.plotHeatmap(dbObj, contrast=1, correlations=FALSE, scale="row"
 
 </pre>
 
-#### Diffbind pipleine full
+#### Diffbind 
 
 <pre> 
 ss <- read.csv("/mnt/beegfs6/home3/reid/av638/atacseq/surani_lab/wg/samplesheet.csv")
@@ -555,7 +555,7 @@ test_contrasts <- dba.show(obj, bContrasts=TRUE)
 
 
 </pre>
-#### DESEQ2 using DIFFBIND derived counts
+#### Deseq2 using Diffbind derived counts
 <pre>
 
 # get counts from diffbind
@@ -618,75 +618,108 @@ res_d["id"] <- rownames(res_d)
 res_d["logbaseMean"] <- log2(res_d$baseMean+1)
 </pre>
 
-####### Footnotes----------
-     > obj <- dba.normalize(obj, method=DBA_DESEQ2)
+#######----------Footnotes----------#### 
+
+
+> obj <- dba.normalize(obj, method=DBA_DESEQ2)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
+> 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2,library = DBA_LIBSIZE_DEFAULT)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
+> 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_DEFAULT)
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
+
 > obj <- dba.normalize(obj, library = DBA_LIBSIZE_FULL)
 > 
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_DEFAULT)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
     0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE)# RLE for DESEq2
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
     0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923 
 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_PEAKREADS)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
     0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_DEFAULT,library = DBA_LIBSIZE_PEAKREADS)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
-    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489
+> 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2,library = DBA_LIBSIZE_PEAKREADS)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
-    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489 
+    0.6240718     0.4666545     1.2619604     0.9095477     1.1036117     1.3171674     0.4056359     0.6920489
+> 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, normalize = DBA_NORM_NATIVE,library = DBA_LIBSIZE_FULL)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
     0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
+    
 > obj <- dba.normalize(obj,normalize = DBA_NORM_NATIVE)
+> 
 > obj$norm$DESeq2$norm.facs
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3996433     1.8616030     1.4199660     2.3250907     1.1248697     1.7218136     1.2156686     1.4979737     0.5409706     0.5401057     0.5342037     0.6621932 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
     0.7019794     0.6122090     1.5503055     1.1209880     1.3732644     1.6133297     0.4713268     0.6442923
+> 
 > obj <- dba.normalize(obj)# default all
+> 
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
+
 > obj <- dba.normalize(obj, library = DBA_LIBSIZE_PEAKREADS)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
         DE_r1         DE_r2       hESC_r1       hESC_r2  hPGCLC_d2_r1  hPGCLC_d2_r2  hPGCLC_d4_r1  hPGCLC_d4_r2 hPGC_wk7_F_r1 hPGC_wk7_F_r2 hPGC_wk7_F_r3 hPGC_wk7_M_r1 
     1.3893406     1.9286069     1.1327701     1.9583004     0.9139431     1.6062935     1.0193394     1.2666328     0.4496935     0.4864651     0.4525491     0.6153672 
 hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME_r2 Soma_wk7_M_r1 Soma_wk7_M_r2 
@@ -694,9 +727,12 @@ hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME
 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_FULL)
 > 
+> 
 > obj$norm$DESeq2$norm.facs
+> 
  [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
+
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_PEAKREADS)
 > 
 > obj$norm$DESeq2$norm.facs
@@ -707,7 +743,9 @@ hPGC_wk7_M_r2         ME_r1         ME_r2         ME_r3      PreME_r1      PreME
 
 
 > obj <- dba.normalize(obj, method=DBA_DESEQ2, library = DBA_LIBSIZE_DEFAULT)
+> 
 > obj$norm$DESeq2$norm.facs
+> 
 [1] 1.1328567 1.1262136 1.3109969 1.1795663 1.3231150 1.0951867 1.1827066 1.1403031 0.7173917 0.6026628 0.7300126 0.6749297 0.8448875 0.8452929 1.2518313 0.7863995 1.3709245
 [18] 1.1804729 0.7696433 0.7346065
 
