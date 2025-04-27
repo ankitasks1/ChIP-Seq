@@ -230,6 +230,8 @@ Set path
 
 #Deeptools
 
+https://deeptools.readthedocs.io/en/latest/
+
 <code>computeMatrix reference-point -S H3K4me2.bw -R refTSS_v3.3_human_coordinate.hg38.bed -o test1 --a 3000 -b 3000 -bs 25 --missingDataAsZero</code>
 
 <code>plotHeatmap -m test1 --colorList "white,blue" -out test1_computeMatrix1.png --sortUsing max </code>
